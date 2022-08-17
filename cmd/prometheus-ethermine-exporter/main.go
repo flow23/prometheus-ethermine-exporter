@@ -22,6 +22,7 @@ const (
 	CurrencySymbolZcash           = "ZEC"
 	CurrencySymbolRavencoin       = "RVN"
 	CurrencySymbolBEAM            = "BEAM"
+	CurrencySymbolErgo            = "ERGO"
 )
 
 // Currency - Currency info.
@@ -38,6 +39,7 @@ var Currencies = map[CurrencySymbol]Currency{
 	CurrencySymbolZcash:           {CurrencySymbolZcash, 1},
 	CurrencySymbolRavencoin:       {CurrencySymbolRavencoin, 1},
 	CurrencySymbolBEAM:            {CurrencySymbolBEAM, 1},
+	CurrencySymbolErgo:            {CurrencySymbolErgo, 1},
 }
 
 // Pool - Pool info.
@@ -57,6 +59,7 @@ var Pools = map[string]Pool{
 	"flypool-zcash":     {"flypool-zcash", "Zcash Flypool", CurrencySymbolZcash, "https://api-zcash.flypool.org"},
 	"flypool-ravencoin": {"flypool-ravencoin", "Ravencoin Flypool", CurrencySymbolRavencoin, "https://api-ravencoin.flypool.org"},
 	"flypool-beam":      {"flypool-beam", "Flypool BEAM", CurrencySymbolBEAM, "https://api-beam.flypool.org"},
+	"flypool-ergo":      {"flypool-ergo", "Flypool Ergo", CurrencySymbolErgo, "https://api-ergo.flypool.org"},
 }
 
 type baseAPIData struct {
@@ -133,6 +136,7 @@ type minerWorkersAPIDataElement struct {
 const namespace = "ethermine"
 
 const poolBasicAPIURLSuffix = "/poolStats"
+//const poolBlocksAPIURLSuffix = "/blocks/history"
 const poolNetworkAPIURLSuffix = "/networkStats"
 const poolServerAPIURLSuffix = "/servers/history"
 const minerStatsAPIURLSuffixTemplate = "/miner/<miner>/currentStats"

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
