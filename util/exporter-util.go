@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -52,6 +53,7 @@ func ScrapeHTTPTarget(response http.ResponseWriter, targetURL string, debug bool
 // ParseJSON - Parses the data to JSON.
 // Returns true if successful. Any errors are written to the response writer.
 func ParseJSON(data interface{}, response http.ResponseWriter, rawData []byte, failSilently bool, debug bool) bool {
+	//fmt.Println(json.Unmarshal(rawData, &data))
 	if err := json.Unmarshal(rawData, &data); err != nil {
 		if !failSilently {
 			if debug {

@@ -75,15 +75,37 @@ type poolBasicAPIData struct {
 	baseAPIData
 	Data struct {
 		Stats struct {
-			HashRate    float64 `json:"hashRate"`
-			MinerCount  float64 `json:"miners"`
-			WorkerCount float64 `json:"workers"`
+			HashRate      float64 `json:"hashRate"`
+			MinerCount    float64 `json:"miners"`
+			WorkerCount   float64 `json:"workers"`
+			BlocksPerHour float64 `json:"blocksPerHour"`
 		} `json:"poolStats"`
 		Price struct {
 			USD float64 `json:"usd"`
 			BTC float64 `json:"btc"`
+			EUR float64 `json:"eur"`
+			CNY float64 `json:"cny"`
+			RUB float64 `json:"rub"`
 		} `json:"price"`
+		Estimates struct {
+			BlockReward float64 `json:"blockReward"`
+			HashRate    float64 `json:"hashrate"`
+			BlockTime   float64 `json:"blockTime"`
+			GasPrice    float64 `json:"gasPrice"`
+		}
 	} `json:"data"`
+}
+
+type poolNetworkAPIData struct {
+	baseAPIData
+	Data struct {
+		Time       int64   `json:"time"`
+		BlockTime  float64 `json:"blockTime"`
+		Difficulty float64 `json:"difficulty"`
+		HashRate   float64 `json:"hashrate"`
+		USD        float64 `json:"usd"`
+		BTC        float64 `json:"btc"`
+	}
 }
 
 type poolServerAPIData struct {
@@ -136,7 +158,8 @@ type minerWorkersAPIDataElement struct {
 const namespace = "ethermine"
 
 const poolBasicAPIURLSuffix = "/poolStats"
-//const poolBlocksAPIURLSuffix = "/blocks/history"
+
+// const poolBlocksAPIURLSuffix = "/blocks/history"
 const poolNetworkAPIURLSuffix = "/networkStats"
 const poolServerAPIURLSuffix = "/servers/history"
 const minerStatsAPIURLSuffixTemplate = "/miner/<miner>/currentStats"
@@ -222,13 +245,17 @@ func handlePoolScrapeRequest(response http.ResponseWriter, request *http.Request
 	if !scrapeParse(&basicData, response, pool.APIURL+poolBasicAPIURLSuffix) {
 		return
 	}
+	var networkData poolNetworkAPIData
+	if !scrapeParse(&networkData, response, pool.APIURL+poolNetworkAPIURLSuffix) {
+		return
+	}
 	var serverData poolServerAPIData
 	if !scrapeParse(&serverData, response, pool.APIURL+poolServerAPIURLSuffix) {
 		return
 	}
 
 	// Build registry with data
-	registry := buildPoolRegistry(response, &pool, &basicData, &serverData)
+	registry := buildPoolRegistry(response, &pool, &basicData, &serverData, &networkData)
 	if registry == nil {
 		return
 	}
@@ -318,7 +345,7 @@ func scrapeParse(data interface{}, response http.ResponseWriter, targetURL strin
 }
 
 // Builds a new registry for the pool endpoint, adds scraped data to it and returns it if successful or nil if not.
-func buildPoolRegistry(response http.ResponseWriter, pool *Pool, basicData *poolBasicAPIData, serverData *poolServerAPIData) *prometheus.Registry {
+func buildPoolRegistry(response http.ResponseWriter, pool *Pool, basicData *poolBasicAPIData, serverData *poolServerAPIData, networkData *poolNetworkAPIData) *prometheus.Registry {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(prometheus.NewGoCollector())
 
@@ -334,12 +361,22 @@ func buildPoolRegistry(response http.ResponseWriter, pool *Pool, basicData *pool
 		"currency": string(pool.Currency),
 	})).Set(1)
 
-	// Basic stats
+	// Basic stats - poolStats
 	util.NewGauge(registry, namespace, "pool", "hashrate_hps", "Current total hash rate of the pool (H/s).", constLabels).Set(basicData.Data.Stats.HashRate)
 	util.NewGauge(registry, namespace, "pool", "miner_count", "Current total number of miners in the pool.", constLabels).Set(basicData.Data.Stats.MinerCount)
 	util.NewGauge(registry, namespace, "pool", "worker_count", "Current total number of workers in the pool.", constLabels).Set(basicData.Data.Stats.WorkerCount)
+	util.NewGauge(registry, namespace, "pool", "blocks_per_hour", "Current total number of workers in the pool.", constLabels).Set(basicData.Data.Stats.BlocksPerHour)
+	// Basic stats - price
 	util.NewGauge(registry, namespace, "pool", "price_usd", "Current price (USD).", constLabels).Set(basicData.Data.Price.USD)
 	util.NewGauge(registry, namespace, "pool", "price_btc", "Current price (BTC).", constLabels).Set(basicData.Data.Price.BTC)
+	util.NewGauge(registry, namespace, "pool", "price_eur", "Current price (EUR).", constLabels).Set(basicData.Data.Price.EUR)
+	util.NewGauge(registry, namespace, "pool", "price_cny", "Current price (CNY).", constLabels).Set(basicData.Data.Price.CNY)
+	util.NewGauge(registry, namespace, "pool", "price_rub", "Current price (RUB).", constLabels).Set(basicData.Data.Price.RUB)
+	//Basic stats - estimates
+	util.NewGauge(registry, namespace, "pool", "block_reward", "Block reward.", constLabels).Set(basicData.Data.Estimates.BlockReward)
+	util.NewGauge(registry, namespace, "pool", "hashrate", "Current estimated hash rate of the pool (H/s).", constLabels).Set(basicData.Data.Estimates.HashRate)
+	util.NewGauge(registry, namespace, "pool", "block_time", "Block time.", constLabels).Set(basicData.Data.Estimates.BlockTime)
+	util.NewGauge(registry, namespace, "pool", "gas_price", "Gas Price.", constLabels).Set(basicData.Data.Estimates.GasPrice)
 
 	// Server stats
 	lastServerElements := make(map[string]*poolServerAPIDataElement)
@@ -359,6 +396,13 @@ func buildPoolRegistry(response http.ResponseWriter, pool *Pool, basicData *pool
 		labels["server"] = server
 		serverHashRateMetric.With(labels).Set(element.HashRate)
 	}
+
+	// Network stats
+	util.NewGauge(registry, namespace, "pool", "network_block_time", "Current block time of the network.", constLabels).Set(networkData.Data.BlockTime)
+	util.NewGauge(registry, namespace, "pool", "network_difficulty", "Current difficulty of the network.", constLabels).Set(networkData.Data.Difficulty)
+	util.NewGauge(registry, namespace, "pool", "network_hashrate", "Current hashrate of the network in H/s.", constLabels).Set(networkData.Data.HashRate)
+	util.NewGauge(registry, namespace, "pool", "network_usd", "Current price in USD.", constLabels).Set(networkData.Data.USD)
+	util.NewGauge(registry, namespace, "pool", "network_btc", "Current price in BTC.", constLabels).Set(networkData.Data.BTC)
 
 	return registry
 }
