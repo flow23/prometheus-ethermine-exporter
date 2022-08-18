@@ -149,6 +149,7 @@ type minerWorkersAPIDataElement struct {
 	Timestamp         float64 `json:"time"`
 	LastSeenTimestamp float64 `json:"lastSeen"`
 	ReportedHashRate  float64 `json:"reportedHashrate"`
+	AverageHashRate   float64 `json:"averageHashrate"`
 	CurrentHashRate   float64 `json:"currentHashrate"`
 	ValidShares       float64 `json:"validShares"`
 	InvalidShares     float64 `json:"invalidShares"`
@@ -448,9 +449,10 @@ func buildMinerRegistry(response http.ResponseWriter, pool *Pool, minerAddress s
 	// Worker stats
 	workerLabels := make(prometheus.Labels)
 	workerLabels["worker"] = ""
-	workerLastSeenMetric := util.NewGaugeVec(registry, namespace, "worker", "last_seen_seconds", "Delta between time of last statistics entry and when the miner was last seen (s).", constLabels, workerLabels)
-	workerReportedHashRateMetric := util.NewGaugeVec(registry, namespace, "worker", "hashrate_reported_hps", "Current hash rate for a worker as reported from the worker (H/s).", constLabels, workerLabels)
-	workerCurrentHashRateMetric := util.NewGaugeVec(registry, namespace, "worker", "hashrate_current_hps", "Current hash rate for a worker (H/s).", constLabels, workerLabels)
+	workerLastSeenMetric := util.NewGaugeVec(registry, namespace, "worker", "last_seen_seconds", "Unix timestamp of when the worker was last seen by the pool.", constLabels, workerLabels)
+	workerReportedHashRateMetric := util.NewGaugeVec(registry, namespace, "worker", "hashrate_reported_hps", "Reported hashrate of the worker in H/s.", constLabels, workerLabels)
+	workerAverageHashRateMetric := util.NewGaugeVec(registry, namespace, "worker", "hashrate_average_hps", "Average hashrate of the worker in H/s during the last 24h.", constLabels, workerLabels)
+	workerCurrentHashRateMetric := util.NewGaugeVec(registry, namespace, "worker", "hashrate_current_hps", "Current hashrate of the worker in H/s.", constLabels, workerLabels)
 	workerValidSharesMetric := util.NewGaugeVec(registry, namespace, "worker", "shares_valid", "Number of valid shared for a worker.", constLabels, workerLabels)
 	workerInvalidSharesMetric := util.NewGaugeVec(registry, namespace, "worker", "shares_invalid", "Number of invalid shared for a worker.", constLabels, workerLabels)
 	workerStaleSharesMetric := util.NewGaugeVec(registry, namespace, "worker", "shares_stale", "Number of stale shared for a worker.", constLabels, workerLabels)
@@ -459,6 +461,7 @@ func buildMinerRegistry(response http.ResponseWriter, pool *Pool, minerAddress s
 		labels["worker"] = element.Name
 		workerLastSeenMetric.With(labels).Set(element.Timestamp - element.LastSeenTimestamp)
 		workerReportedHashRateMetric.With(labels).Set(element.ReportedHashRate)
+		workerAverageHashRateMetric.With(labels).Set(element.AverageHashRate)
 		workerCurrentHashRateMetric.With(labels).Set(element.CurrentHashRate)
 		workerValidSharesMetric.With(labels).Set(element.ValidShares)
 		workerInvalidSharesMetric.With(labels).Set(element.InvalidShares)
