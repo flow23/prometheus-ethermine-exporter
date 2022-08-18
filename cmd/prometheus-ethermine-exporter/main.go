@@ -441,13 +441,9 @@ func buildMinerRegistry(response http.ResponseWriter, pool *Pool, minerAddress s
 	util.NewGauge(registry, namespace, "miner", "workers_active", "Number of active workers.", constLabels).Set(statsData.Data.ActiveWorkers)
 	util.NewGauge(registry, namespace, "miner", "balance_unpaid_coins", "Unpaid balance for a miner.", constLabelsWithCurrency).Set(statsData.Data.UnpaidBalanceBaseUnits / baseUnitsPerUnit)
 	util.NewGauge(registry, namespace, "miner", "balance_unconfirmed_coins", "Unconfirmed balance for a miner.", constLabelsWithCurrency).Set(statsData.Data.UnconfirmedBalanceBaseUnits / baseUnitsPerUnit)
-	util.NewGauge(registry, namespace, "miner", "income_coins", "Mined coins per second.", constLabelsWithCurrency).Set(statsData.Data.CoinsPerMinute / 60)
-	util.NewGauge(registry, namespace, "miner", "income_usd", "Mined coins per second (converted to USD).", constLabels).Set(statsData.Data.USDPerMinute / 60)
-	util.NewGauge(registry, namespace, "miner", "income_btc", "Mined coins per second (converted to BTC).", constLabels).Set(statsData.Data.BTCPerMinute / 60)
-	// Deprecated
-	util.NewGauge(registry, namespace, "miner", "income_minute_coins", "(Deprecated) Mined coins per minute.", constLabelsWithCurrency).Set(statsData.Data.CoinsPerMinute)
-	util.NewGauge(registry, namespace, "miner", "income_minute_usd", "(Deprecated) Mined coins per minute (converted to USD).", constLabels).Set(statsData.Data.USDPerMinute)
-	util.NewGauge(registry, namespace, "miner", "income_minute_btc", "(Deprecated) Mined coins per minute (converted to BTC).", constLabels).Set(statsData.Data.BTCPerMinute)
+	util.NewGauge(registry, namespace, "miner", "income_minute_coins", "Estimated number of coins (in base units) mined per minute (based on your average hashrate as well as the average block time and difficulty of the network over the last 24 hours.).", constLabelsWithCurrency).Set(statsData.Data.CoinsPerMinute)
+	util.NewGauge(registry, namespace, "miner", "income_minute_usd", "Estimated number of USD (in base units) mined per minute (based on your average hashrate as well as the average block time and difficulty of the network over the last 24 hours.).", constLabels).Set(statsData.Data.USDPerMinute)
+	util.NewGauge(registry, namespace, "miner", "income_minute_btc", "Estimated number of BTC (in base units) mined per minute (based on your average hashrate as well as the average block time and difficulty of the network over the last 24 hours.).", constLabels).Set(statsData.Data.BTCPerMinute)
 
 	// Worker stats
 	workerLabels := make(prometheus.Labels)
